@@ -1,7 +1,59 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _handleController = TextEditingController();
+  bool _loading = false;
+  String _error = '';
+
+  Future<void> _login() async {
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
+
+    try {
+      final challenge = await ApiService.getChallenge(
+        _handleController.text.trim(),
+      );
+
+      if (challenge.containsKey('error')) {
+        setState(() {
+          _error = challenge['error'];
+          _loading = false;
+        });
+        return;
+      }
+
+      final result = await ApiService.verify(
+        challenge['challengeId'],
+        'DEMO_SIGNATURE',
+      );
+
+      if (result.containsKey('token')) {
+        Navigator.pushNamed(context, '/send', arguments: result['token']);
+      } else {
+        setState(() {
+          _error = result['error'] ?? 'Login failed';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Could not connect to server';
+      });
+    }
+
+    setState(() {
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,18 +70,32 @@ class LoginScreen extends StatelessWidget {
               'Welcome back',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'Unlock with biometric',
-              style: TextStyle(color: Colors.grey),
-            ),
             const SizedBox(height: 30),
+            TextField(
+              controller: _handleController,
+              decoration: const InputDecoration(
+                labelText: '@handle',
+                prefixText: '@',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_error.isNotEmpty)
+              Text(_error, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, '/send'),
-                child: const Text('Use fingerprint'),
+                onPressed: _loading ? null : _login,
+                child: _loading
+                    ? const CircularProgressIndicator()
+                    : const Text('Login'),
               ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/register'),
+              child: const Text('No account? Register here'),
             ),
           ],
         ),

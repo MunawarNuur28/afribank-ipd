@@ -1,7 +1,58 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final _handleController = TextEditingController();
+  bool _loading = false;
+  String _error = '';
+
+  Future<void> _register() async {
+    final handle = _handleController.text.trim();
+
+    if (handle.isEmpty) {
+      setState(() {
+        _error = 'Please enter a handle';
+      });
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _error = '';
+    });
+
+    try {
+      final result = await ApiService.register(handle, 'DEMO_PUBLIC_KEY');
+
+      if (result.containsKey('buid')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registered! Your BUID: ${result['buid']}')),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushNamed(context, '/login');
+        });
+      } else {
+        setState(() {
+          _error = result['error'] ?? 'Registration failed';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Could not connect to server';
+      });
+    }
+
+    setState(() {
+      _loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +68,9 @@ class OnboardingScreen extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            const TextField(
-              decoration: InputDecoration(
+            TextField(
+              controller: _handleController,
+              decoration: const InputDecoration(
                 labelText: 'Choose your @handle',
                 hintText: 'e.g., munawar',
                 border: OutlineInputBorder(),
@@ -29,23 +81,17 @@ class OnboardingScreen extends StatelessWidget {
               '3–30 letters, numbers, or underscores',
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
+            if (_error.isNotEmpty)
+              Text(_error, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Your identity: @munawar\nBUID: a1b2c3d4-...',
-                      ),
-                    ),
-                  );
-                  Future.delayed(const Duration(seconds: 2), () {
-                    Navigator.pushNamed(context, '/login');
-                  });
-                },
-                child: const Text('Continue'),
+                onPressed: _loading ? null : _register,
+                child: _loading
+                    ? const CircularProgressIndicator()
+                    : const Text('Continue'),
               ),
             ),
           ],
