@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'AfriBank',
       theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      initialRoute: '/',
+      initialRoute: '/login',
       onGenerateRoute: AppRouter.generateRoute,
     );
   }

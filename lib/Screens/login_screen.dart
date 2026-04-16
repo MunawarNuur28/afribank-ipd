@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,9 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final challenge = await ApiService.getChallenge(
-        _handleController.text.trim(),
-      );
+      final handle = _handleController.text.trim().replaceAll('@', '');
+
+      final challenge = await ApiService.getChallenge(handle);
 
       if (challenge.containsKey('error')) {
         setState(() {
@@ -38,7 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (result.containsKey('token')) {
-        Navigator.pushNamed(context, '/send', arguments: result['token']);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('buid', result['buid']);
+        await prefs.setString('handle', result['handle']);
+        if (mounted) {
+          Navigator.pushNamed(context, '/send');
+        }
       } else {
         setState(() {
           _error = result['error'] ?? 'Login failed';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -32,9 +33,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final result = await ApiService.register(handle, 'DEMO_PUBLIC_KEY');
 
       if (result.containsKey('buid')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registered! Your BUID: ${result['buid']}')),
-        );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('buid', result['buid']);
+        await prefs.setString('handle', result['handle']);
+
         Future.delayed(const Duration(seconds: 2), () {
           Navigator.pushNamed(context, '/login');
         });

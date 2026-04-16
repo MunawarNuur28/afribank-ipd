@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8080';
 
-  // Register new user
   static Future<Map<String, dynamic>> register(
     String handle,
     String publicKey,
@@ -17,7 +16,6 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Get login challenge
   static Future<Map<String, dynamic>> getChallenge(String handle) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/auth/challenge'),
@@ -27,7 +25,6 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Verify signature and get JWT
   static Future<Map<String, dynamic>> verify(
     String challengeId,
     String signature,
@@ -40,18 +37,15 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Get balance
-  static Future<List<dynamic>> getBalance(String token) async {
+  static Future<List<dynamic>> getBalance(String buid) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/balance'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('$baseUrl/api/balance?buid=$buid'),
     );
     return jsonDecode(response.body);
   }
 
-  // Send money
   static Future<Map<String, dynamic>> transfer(
-    String token,
+    String senderBuid,
     String recipientHandle,
     double amount,
     String fromCurrency,
@@ -62,10 +56,10 @@ class ApiService {
       Uri.parse('$baseUrl/api/transfer'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
         'Idempotency-Key': idempotencyKey,
       },
       body: jsonEncode({
+        'senderBuid': senderBuid,
         'recipientHandle': recipientHandle,
         'amount': amount,
         'fromCurrency': fromCurrency,
@@ -76,16 +70,13 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  // Get transaction history
-  static Future<List<dynamic>> getTransactions(String token) async {
+  static Future<List<dynamic>> getTransactions(String buid) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/api/transactions'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('$baseUrl/api/transactions?buid=$buid'),
     );
     return jsonDecode(response.body);
   }
 
-  // FX quote
   static Future<Map<String, dynamic>> getFxQuote(
     String from,
     String to,
